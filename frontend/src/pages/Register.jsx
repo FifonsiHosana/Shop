@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import register from "../assets/Register.webp";
+import register from "../assets/register.webp";
 import { RegisterUser } from "../redux/slices/authSlice";
 import { useDispatch } from "react-redux";
 import { useLocation } from "react-router-dom";
