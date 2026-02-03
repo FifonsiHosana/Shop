@@ -6,7 +6,7 @@ import { Toaster } from "sonner";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
-import CollectionPage from "./pages/collectionPage";
+import CollectionPage from "./pages/CollectionPage";
 import ProductDetails from "./componenets/Product/ProductDetails";
 import Checkout from "./componenets/Cart/Checkout";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
