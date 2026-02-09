@@ -8,26 +8,6 @@ import {
   fetchSimilarProducts,
 } from "../../redux/slices/productSlice";
 import { addToCart } from "../../redux/slices/cartSlice";
-// const selectedProduct = {
-//   name: "Evisu Pants",
-//   price: 120,
-//   originalPrice: 150,
-//   description: "Evisu pants extra details hot sale",
-//   brand: "Evisu",
-//   material: "leather",
-//   sizes: ["S", "M", "L", "XL"],
-//   colors: ["Red", "Black"],
-//   images: [
-//     {
-//       url: "https://picsum.photos/500/500?random=1",
-//       altText: "Evisu Pants",
-//     },
-//     {
-//       url: "https://picsum.photos/500/500?random=2",
-//       altText: "Evisu Pants",
-//     },
-//   ],
-// };
 
 // const similarProducts = [
 //   {
@@ -80,7 +60,7 @@ const ProductDetails = ({ productId }) => {
     (state) => state.products,
   );
   const { user, guestId } = useSelector((state) => state.auth);
-  const [mainImage, setMainImage] = useState(selectedProduct?.images?.[0]?.url);
+  const [mainImage, setMainImage] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
   const [quantity, setQuantity] = useState(1);
@@ -93,7 +73,19 @@ const ProductDetails = ({ productId }) => {
       dispatch(fetchProductDetails(productFetchId));
       dispatch(fetchSimilarProducts({ id: productFetchId }));
     }
+    
   }, [dispatch, productFetchId]);
+
+
+
+  useEffect(() => {
+    if (selectedProduct?.images?.[0]?.url) {
+      setMainImage(selectedProduct.images[0].url);
+      setQuantity(1);
+      setSelectedSize("");
+      setSelectedColor("");
+    }
+  }, [selectedProduct]);
 
   const handleQuantityChange = (action) => {
     if (action === "+") setQuantity((prev) => prev + 1);
@@ -109,182 +101,193 @@ const ProductDetails = ({ productId }) => {
 
     setIsButtonDisabled(true);
 
-    // setTimeout(() => {
-    //   toast.success("Product added to cart!", {
-    //     duration: 2000,
-    //   });
-    //   setIsButtonDisabled(false);
-    // }, 500);
-
     dispatch(
       addToCart({
         productId: productFetchId,
         quantity,
         size: selectedSize,
+        color:selectedColor,
         guestId,
-        userId:user?._id,
+        userId: user?._id,
+      }),
+    )
+      .then(() => {
+        toast.success("product added to cart!", {
+          duration: 1000,
+        });
       })
-    ).then(()=>{
-      toast.success("product added to cart!",{
-      duration:1000})
-    }).finally(()=>{
-      setIsButtonDisabled(false);
-    })
+      .finally(() => {
+        setIsButtonDisabled(false);
+              setQuantity(1);
+              setSelectedSize("");
+              setSelectedColor("");
+      });
   };
 
-  if (loading){
-    return <p>loading...</p>
+  if (loading) {
+    return <p>loading...</p>;
   }
-  if (error){
-    return <p>error:{error}</p>
+  if (error) {
+    return <p>error:{error}</p>;
   }
   return (
     <div className="p-6">
-      {selectedProduct &&(
-      <div className="max-w-6xl mx-auto bg-white p-8 rounded-lg">
-        <div className="flex flex-col md:flex-row">
-          {/* thumbnails */}
-          <div className="hidden md:flex flex-col space-y-4 mr-6">
-            {selectedProduct.images.map((image, index) => (
-              <img
-                key={index}
-                src={image.url}
-                alt={image.altText || `thumbnail ${index}`}
-                className={`w-20 h-20 object-cover rounded-lg cursor-pointer border${
-                  mainImage === image.url ? " border-black" : " border-gray-300"
-                }`}
-                onClick={() => setMainImage(image.url)}
-              />
-            ))}
-          </div>
-
-          <div className="md:w-1/2">
-            <div className="mb-4">
-              <img
-                src={mainImage}
-                alt="Main Product"
-                className="w-full h-auto object-cover rounded-lg"
-              />
+      {selectedProduct?.images[0].url && (
+        <div className="max-w-6xl mx-auto bg-white p-8 rounded-lg">
+          <div className="flex flex-col md:flex-row">
+            {/* thumbnails */}
+            <div className="hidden md:flex flex-col space-y-4 mr-6">
+              {selectedProduct.images.map((image, index) => (
+                <img
+                  key={index}
+                  src={image.url}
+                  alt={image.altText || `thumbnail ${index}`}
+                  className={`w-20 h-20 object-cover rounded-lg cursor-pointer border${
+                    mainImage === image.url
+                      ? " border-black"
+                      : " border-gray-300"
+                  }`}
+                  onClick={() => setMainImage(image.url)}
+                />
+              ))}
             </div>
-          </div>
 
-          <div className="md:hidden flex overflow-x-scroll space-x-4 mb-4">
-            {selectedProduct.images.map((image, index) => (
-              <img
-                key={index}
-                src={image.url}
-                alt={image.altText || `thumbnail ${index}`}
-                className={`w-20 h-20 object-cover rounded-lg cursor-pointer border${
-                  mainImage === image.url ? " border-black" : " border-gray-300"
-                }`}
-                onClick={() => setMainImage(image.url)}
-              />
-            ))}
-          </div>
+            {/* <div className="bg-blue-700">{selectedProduct.images[0].url} {mainImage}</div> */}
 
-          <div className="md:w-1/2 md:ml-10">
-            <h1 className="text-2xl md:text-3xl font-semibold mb-2">
-              {selectedProduct.name}
-            </h1>
-            <p className="text-lg text-gray-600 mb-1 line-through">
-              {selectedProduct.originalPrice &&
-                `${selectedProduct.originalPrice}`}
-            </p>
-            <p className="text-xl text-gray-500 mb-2">
-              ${selectedProduct.price}
-            </p>
-            <p className="text-gray-600 mb-4 ">{selectedProduct.description}</p>
-            <div className="mb-4">
-              <p className="text-gray-700">color:</p>
-              <div className="flex gap-2 mt-2">
-                {selectedProduct.colors.map((color) => (
-                  <button
-                    key={color}
-                    className={`w-8 h-8 rounded-full border ${
-                      selectedColor === color
-                        ? "border-4 border-black"
-                        : "border-gray-300"
-                    }`}
-                    style={{
-                      backgroundColor: color.toLocaleLowerCase(),
-                      filter: "brightness(0.5)",
-                    }}
-                    onClick={() => setSelectedColor(color)}
-                  ></button>
-                ))}
+            <div className="md:w-1/2">
+              <div className="mb-4">
+                <img
+                  src={mainImage}
+                  alt="Main Product"
+                  className="w-full h-auto object-cover rounded-lg"
+                />
               </div>
             </div>
-            <div className="mb-4">
-              <p className="text-gray-700">Size:</p>
-              <div className="flex gap-2 mt-2">
-                {selectedProduct.sizes.map((size) => (
+
+            <div className="md:hidden flex overflow-x-scroll space-x-4 mb-4">
+              {selectedProduct.images.map((image, index) => (
+                <img
+                  key={index}
+                  src={image.url}
+                  alt={image.altText || `thumbnail ${index}`}
+                  className={`w-20 h-20 object-cover rounded-lg cursor-pointer border${
+                    mainImage === image.url
+                      ? " border-black"
+                      : " border-gray-300"
+                  }`}
+                  onClick={() => setMainImage(image.url)}
+                />
+              ))}
+            </div>
+
+            <div className="md:w-1/2 md:ml-10">
+              <h1 className="text-2xl md:text-3xl font-semibold mb-2">
+                {selectedProduct.name}
+              </h1>
+              <p className="text-lg text-gray-600 mb-1 line-through">
+                {selectedProduct.originalPrice &&
+                  `${selectedProduct.originalPrice}`}
+              </p>
+              <p className="text-xl text-gray-500 mb-2">
+                ${selectedProduct.price}
+              </p>
+              <p className="text-gray-600 mb-4 ">
+                {selectedProduct.description}
+              </p>
+              <div className="mb-4">
+                <p className="text-gray-700">color:</p>
+                <div className="flex gap-2 mt-2">
+                  {selectedProduct.colors.map((color) => (
+                    <button
+                      key={color}
+                      className={`w-8 h-8 rounded-full border ${
+                        selectedColor === color
+                          ? "border-4 border-black"
+                          : "border-gray-300"
+                      }`}
+                      style={{
+                        backgroundColor: color.toLocaleLowerCase(),
+                       filter: "brightness(0.5)",
+                      }}
+                      onClick={() => setSelectedColor(color)}
+                    ></button>
+                  ))}
+                </div>
+              </div>
+              <div className="mb-4">
+                <p className="text-gray-700">Size:</p>
+                <div className="flex gap-2 mt-2">
+                  {selectedProduct.sizes.map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`px-4 py-2 rounded border ${
+                        selectedSize === size
+                          ? "bg-black text-white"
+                          : " border-gray-200"
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-gray-700">Quantity:</p>
+                <div className="flex items-center space-x-4 mt-2">
                   <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`px-4 py-2 rounded border ${
-                      selectedSize === size
-                        ? "bg-black text-white"
-                        : " border-gray-200"
-                    }`}
+                    className="px-2 py-1 bg-gray-200 rounded text-lg"
+                    onClick={() => handleQuantityChange("-")}
                   >
-                    {size}
+                    -
                   </button>
-                ))}
+                  <span className="text-lg">{quantity}</span>
+                  <button
+                    className="px-2 py-1 bg-gray-200 rounded text-lg"
+                    onClick={() => handleQuantityChange("+")}
+                  >
+                    +
+                  </button>
+                </div>
               </div>
-            </div>
+              <button
+                onClick={handleAddToCart}
+                disabled={isButtonDisabled}
+                className={`bg-black text-white py-2 rounded w-full mb-4 ${isButtonDisabled ? "bg-black/50 cursor-not-allowed " : "hover:bg-gray-900"}`}
+              >
+                {isButtonDisabled ? "Adding..." : "Add to Cart"}
+              </button>
 
-            <div className="mb-6">
-              <p className="text-gray-700">Quantity:</p>
-              <div className="flex items-center space-x-4 mt-2">
-                <button
-                  className="px-2 py-1 bg-gray-200 rounded text-lg"
-                  onClick={() => handleQuantityChange("-")}
-                >
-                  -
-                </button>
-                <span className="text-lg">{quantity}</span>
-                <button
-                  className="px-2 py-1 bg-gray-200 rounded text-lg"
-                  onClick={() => handleQuantityChange("+")}
-                >
-                  +
-                </button>
+              <div className="mt-10 text-gray-700">
+                <h3 className="text-xl font-bold mb-4">Characteriscs</h3>
+                <table className="w-full text-left text-sm text-gray-600">
+                  <tbody>
+                    <tr>
+                      <td className="py-1">Brand</td>
+                      <td className="py-1">{selectedProduct.brand}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1">Material</td>
+                      <td className="py-1">{selectedProduct.material}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-            </div>
-            <button
-              onClick={handleAddToCart}
-              disabled={isButtonDisabled}
-              className={`bg-black text-white py-2 rounded w-full mb-4 ${isButtonDisabled ? "bg-black/50 cursor-not-allowed " : "hover:bg-gray-900"}`}
-            >
-              {isButtonDisabled ? "Adding..." : "Add to Cart"}
-            </button>
-
-            <div className="mt-10 text-gray-700">
-              <h3 className="text-xl font-bold mb-4">Characteriscs</h3>
-              <table className="w-full text-left text-sm text-gray-600">
-                <tbody>
-                  <tr>
-                    <td className="py-1">Brand</td>
-                    <td className="py-1">{selectedProduct.brand}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-1">Material</td>
-                    <td className="py-1">{selectedProduct.material}</td>
-                  </tr>
-                </tbody>
-              </table>
             </div>
           </div>
+          <div className="mt-20">
+            <h2 className="text-2xl text-center font-medium mb-4">
+              You May Also Like
+            </h2>
+            <ProductGrid
+              products={similarProducts}
+              loading={loading}
+              error={error}
+            />
+          </div>
         </div>
-        <div className="mt-20">
-          <h2 className="text-2xl text-center font-medium mb-4">
-            You May Also Like
-          </h2>
-          <ProductGrid products={similarProducts} loading={loading} error={error} />
-        </div>
-      
-      
-      </div>)}
+      )}
     </div>
   );
 };

@@ -13,12 +13,13 @@ export const fetchAllOrders = createAsyncThunk(
             Authorization: `Bearer ${localStorage.getItem("userToken")}`,
           },
         },
-      );
+      );console.log(response.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
   },
+  
 );
 // Update order delivery status
 export const updateOrderStatus = createAsyncThunk(

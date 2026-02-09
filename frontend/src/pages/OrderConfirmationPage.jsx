@@ -3,36 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { clearCart } from "../redux/slices/cartSlice";
 
-// const checkout = {
-//   _id: "12345",
-//   createdAt: new Date(),
-//   checkoutItems: [
-//     {
-//       productId: "1",
-//       name: "Jacket",
-//       color: "black",
-//       size: "M",
-//       price: 150,
-//       quantity: 1,
-//       image: "https://picsum.photos/150?random=1",
-//     },
-//     {
-//       productId: "2",
-//       name: "Shirt",
-//       color: "black",
-//       size: "M",
-//       price: 150,
-//       quantity: 3,
-//       image: "https://picsum.photos/150?random=3",
-//     },
-//   ],
-//   shippingAddress: {
-//     address: "123 BB street",
-//     city: "Adenta",
-//     country: "Ghana",
-//   },
-// };
-
 const OrderConfirmationPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -43,8 +13,9 @@ const OrderConfirmationPage = () => {
       dispatch(clearCart());
       localStorage.removeItem("cart");
     }else{
-      navigate("/my-order");
-    }
+      navigate("/my-orders");
+     }
+     console.log(checkout)
   }, [checkout,navigate, dispatch]);
 
   const calculateEstimatedDelivery = (createdAt) => {

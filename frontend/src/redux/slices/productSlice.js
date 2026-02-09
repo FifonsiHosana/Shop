@@ -55,7 +55,7 @@ export const updateProduct = createAsyncThunk(
   "product/updateProduct",
   async ({ id, productData }) => {
     const response = await axios.put(
-      `${import.meta.env.VITE_BACKEND_URL}/api/products/${id}`,
+      `${import.meta.env.VITE_BACKEND_URL}/api/products/${id}`,      
       productData,
       {
         headers: {
@@ -82,7 +82,7 @@ const productsSlice = createSlice({
   name: "products",
   initialState: {
     products: [],
-    selectedProduct: null,
+    selectedProduct:null,
     similarProducts: [],
     loading: false,
     error: null,
@@ -122,7 +122,7 @@ const productsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      //handle fetching products with filters
+      //handle fetching products using filters
       .addCase(fetchProductsByFilters.pending, (state) => {
         state.loading = true;
         state.error = null;

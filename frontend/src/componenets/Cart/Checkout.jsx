@@ -30,7 +30,8 @@ const Checkout = () => {
   const dispatch = useDispatch();
 
   const { user } = useSelector((state) => state.auth);
-  const { cart, loading, error } = useSelector((state) => state.cart);
+  const { cart, error } = useSelector((state) => state.cart);
+  const { loading } = useSelector((state) => state.checkout);
 
   const [checkoutId, setCheckouId] = useState(null);
   const [shippingAddress, setShippingAddress] = useState({

@@ -14,7 +14,7 @@ const SortOptions = () => {
       <select id="sort" value={searchParams.get("sortBy")||""} onChange={handleSortChange} className="border p-2 rounded-md focus:outline-none">
         <option value="">Default</option>
         <option value="priceAsc">Price: Low to High</option>
-        <option value="PriceDesc">Price: High to low</option>
+        <option value="priceDesc">Price: High to low</option>
         <option value="popularity">Popularity</option>
       </select>
     </div>

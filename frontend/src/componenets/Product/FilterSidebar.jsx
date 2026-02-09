@@ -24,11 +24,11 @@ const FilterSidebar = () => {
 
   const handleFilterChange = (e) => {
     const { name, value, checked, type } = e.target;
-    let newFilters = { ...filters };
+    let newFilters = {...filters} ;
 
     if (type === "checkbox") {
       if (checked) {
-        newFilters[name] = [...(newFilters[name] || []), value];
+       newFilters[name] = [...(newFilters[name] || []), value];//size,material,brand
       } else {
         newFilters[name] = newFilters[name].filter((item) => item !== value);
       }
@@ -38,15 +38,18 @@ const FilterSidebar = () => {
     setFilters(newFilters);
     updateUrlParams(newFilters);
     console.log(newFilters);
+    console.log(filters);
   };
+
+
   useEffect(() => {
     const params = Object.fromEntries([...searchParams]);
     setFilters({
       category: params.category || "",
       gender: params.gender || "",
-      size: params.sizes ? params.sizes.split(",") : [],
+      size: params.size ? params.size.split(",") : [],
       material: params.material ? params.material.split(",") : [],
-      brand: params.brand ? params.brnad.split(",") : [],
+      brand: params.brand ? params.brand.split(",") : [],
       minPrice: params.minPrice || 0,
       maxPrice: params.maxPrice || 100,
     });
@@ -163,7 +166,8 @@ const FilterSidebar = () => {
             <input
               type="checkbox"
               name="material"
-              checked={filters}
+              checked={filters.material.includes(material)}
+              value={material}
               onChange={handleFilterChange}
               className="mr-2 h-4 text-blue-500 focus:ring-blue-400 border-gray-300"
             />
@@ -180,7 +184,8 @@ const FilterSidebar = () => {
           <div key={brand} className="flex items-center mb-1">
             <input
               type="checkbox"
-              name="size"
+              name="brand"
+              value= {brand}
               onChange={handleFilterChange}
               checked={filters.brand.includes(brand)}
               className="mr-2 h-4 text-blue-500 focus:ring-blue-400 border-gray-300"
@@ -189,7 +194,7 @@ const FilterSidebar = () => {
           </div>
         ))}
       </div>
-      {/* Price renage */}
+      {/* Price range */}
 
       <div className="mb-8">
         <label className="block text-gray-600 font-medium mb-2">

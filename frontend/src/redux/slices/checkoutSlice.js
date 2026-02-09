@@ -22,7 +22,7 @@ export const createCheckout = createAsyncThunk(
   },
 );
 
-const checkoutSLice = createSlice({
+const checkoutSlice = createSlice({
   name: "checkout",
   initialState: {
     checkout: null,
@@ -37,14 +37,14 @@ const checkoutSLice = createSlice({
         state.error = null;
       })
       .addCase(createCheckout.fulfilled, (state, action) => {
-        state.loading = true;
+        state.loading = false;
         state.checkout = action.payload;
       })
       .addCase(createCheckout.rejected, (state, action) => {
-        state.loading = true;
+        state.loading = false;
         state.error = action.payload.message;
       });
   },
 });
 
-export default checkoutSLice.reducer;
+export default checkoutSlice.reducer;

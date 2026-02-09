@@ -1,7 +1,7 @@
 const express = require("express");
 const Product = require("../models/Products.js");
 const Cart = require("../models/Cart.js");
-const {protect} = require("../middleware/authMiddleware");
+const { protect } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -46,7 +46,7 @@ router.post("/", async (req, res) => {
           image: product.images[0].url,
           price: product.price,
           size,
-          color,
+          color:color,
           quantity,
         });
       }
@@ -110,6 +110,8 @@ router.put("/", async (req, res) => {
         (acc, item) => acc + item.price * item.quantity,
         0,
       );
+      
+      
       await cart.save();
       return res.status(200).json(cart);
     } else {
@@ -206,29 +208,29 @@ router.post("/merge", protect, async (req, res) => {
         //Remove guest cart after merging
 
         try {
-            await Cart.findOneAndDelete({guestId});
+          await Cart.findOneAndDelete({ guestId });
         } catch (error) {
-            console.error("Error deleting guest cart", error);            
+          console.error("Error deleting guest cart", error);
         }
         res.status(200).json(userCart);
-      }else{
+      } else {
         //if user has no cart assign guest cart to user
-        guestCart.user= req.user._id;
+        guestCart.user = req.user._id;
         guestCart.guestId = undefined;
         await guestCart.save();
 
         res.status(200).json(guestCart);
       }
     } else {
-        if (userCart) {
-            //Guest cart alreay merged return user cart
-            return res.status(200).json(userCart);
-        }
-        res.status(404).json(userCart);
+      if (userCart) {
+        //Guest cart alreay merged return user cart
+        return res.status(200).json(userCart);
+      }
+      res.status(404).json(userCart);
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: "Server Error"});
+    res.status(500).json({ message: "Server Error" });
   }
 });
 

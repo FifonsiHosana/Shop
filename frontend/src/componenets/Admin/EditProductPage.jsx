@@ -71,14 +71,24 @@ const EditProductPage = () => {
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    dispatch(updateProduct({ id, productData }));
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const result = await dispatch(updateProduct({ id, productData })).unwrap();
+    console.log("Update successful:", result);
+    alert("Product updated successfully!");
     navigate("/admin/products");
-  };
+  } catch (error) {
+    console.error("Full error object:", error);
+    const errorMessage =
+      error?.response?.data?.message || error?.message || "Unknown error";
+    alert("Update failed: " + errorMessage);
+  }
+};
 
   if (loading) return <p>loading...</p>;
   if (error) return <p>Error:{error}</p>;
+
   return (
     <div className="max-w-5xl mx-auto p-6 shadow-md rounded-md">
       <h2 className="text-3xl font-bold mb-6 ">Edit Product</h2>
@@ -96,7 +106,7 @@ const EditProductPage = () => {
         </div>
         {/* Description */}
         <div className="mb-6">
-          <label className="block font-semibold mb-2">Product Name</label>
+          <label className="block font-semibold mb-2">Product description</label>
           <textarea
             name="description"
             onChange={handleChange}
@@ -121,7 +131,7 @@ const EditProductPage = () => {
           <label className="block font-semibold mb-2">Count in stock</label>
           <input
             type="number"
-            name="count in stock"
+            name="countInStock"
             value={productData.countInStock}
             onChange={handleChange}
             className="w-full border border-gray-300 rounded-md p-2"

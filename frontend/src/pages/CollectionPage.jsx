@@ -3,27 +3,27 @@ import { FaFilter } from "react-icons/fa";
 import FilterSidebar from "../componenets/Product/FilterSidebar";
 import ProductGrid from "../componenets/Product/ProductGrid";
 import SortOptions from "../componenets/Product/SortOptions";
-import { useParams,useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProductsByFilters } from "../redux/slices/productSlice";
 
-
 const CollectionPage = () => {
-  const {collection} = useParams();
+  const { collection } = useParams();
   const [searchParams] = useSearchParams();
   const dispatch = useDispatch();
-  const {products, loading, error} = useSelector((state)=>state.products);
-  const queryParams = Object.fromEntries([...searchParams])
-  // const [products, setProducts] = useState([]);
+  const { products, loading, error } = useSelector((state) => state.products);
+  const queryParams = Object.fromEntries([...searchParams]);
+
   const sidebarRef = useRef(null);
   const [isSidebarOpen, setIsSideBarOpen] = useState(false);
-  
-  useEffect(()=>{
-    dispatch(fetchProductsByFilters({collection, ...queryParams}))
-  },[dispatch, collection,searchParams])
-  
+
+  useEffect(() => {
+    dispatch(fetchProductsByFilters({ collection, ...queryParams }));
+  }, [dispatch, collection, searchParams]);
+
   const toggleSidebar = () => {
     setIsSideBarOpen(!isSidebarOpen);
+    
   };
 
   const handleClickOutisde = (e) => {
@@ -32,14 +32,11 @@ const CollectionPage = () => {
     }
   };
 
-
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutisde);
     document.removeEventListener("touchstart", handleClickOutisde);
-  },[sidebarRef,handleClickOutisde]);
+  }, [sidebarRef, handleClickOutisde]);
 
-
-  
   return (
     <div className="flex flex-col lg:flex-row">
       {/* Mobile filter */}
@@ -62,10 +59,9 @@ const CollectionPage = () => {
       </div>
       <div className="grow p-4">
         <h2 className="text-2xl uppercase mb-4">All collections</h2>
-<SortOptions/>
-        <ProductGrid products={products} loading={loading} error={error}/>
+        <SortOptions />
+        <ProductGrid products={products} loading={loading} error={error} />
       </div>
-      
     </div>
   );
 };

@@ -6,7 +6,7 @@ import { removeFromCart, updateCartItemQuantity } from "../../redux/slices/cartS
 const CartContent = ({ cart, userId, guestId }) => {
   const dispatch = useDispatch();
 
-  const handleAddtoCart = (productId, delta, quantity, size, color) => {
+  const handleAddtoCart = (productId, delta, quantity, size, color, totalPrice) => {
     const newQuantity = quantity + delta;
     if (newQuantity >= 1) {
       dispatch(
@@ -17,36 +17,20 @@ const CartContent = ({ cart, userId, guestId }) => {
           userId,
           size,
           color,
+          totalPrice
         }),
       );
     }
   };
   const handleRemoveFromCart = (productId, size, color)=>{
     dispatch(removeFromCart({ productId, guestId, userId, size, color }));
-  } 
-  // const cartProds = [
-  //   {
-  //     productId: 1,
-  //     name: "shirt",
-  //     color: "Red",
-  //     size: "M",
-  //     quantity: 1,
-  //     price: 25,
-  //     image: "https://picsum.photos/200/300",
-  //   },
-  //   {
-  //     productId: 1,
-  //     name: "shirt",
-  //     color: "Red",
-  //     size: "M",
-  //     quantity: 1,
-  //     price: 25,
-  //     image: "https://picsum.photos/200/300",
-  //   }
-  // ];
+  };
+console.log("these are the cart items",cart.products[0]);
+  
   
   return (
     <div>
+      
       {cart.products.map((product, index) => (
         <div
           key={index}
@@ -66,13 +50,14 @@ const CartContent = ({ cart, userId, guestId }) => {
               </p>
               <div className="flex items-center mt-2">
                 <button
-                  onClick={() => 
+                  onClick={() =>
                     handleAddtoCart(
                       product.productId,
                       -1,
                       product.quantity,
                       product.size,
                       product.color,
+                      product.totalPrice,
                     )
                   }
                   className="border rounded px-2 py-1 text-xl font font-medium"
@@ -81,13 +66,14 @@ const CartContent = ({ cart, userId, guestId }) => {
                 </button>
                 <span className="mx-4">{product.quantity}</span>
                 <button
-                  onClick={() => 
+                  onClick={() =>
                     handleAddtoCart(
                       product.productId,
                       1,
                       product.quantity,
                       product.size,
                       product.color,
+                      product.totalPrice,
                     )
                   }
                   className="border rounded px-2 py-1 text-xl font font-medium"
@@ -98,8 +84,16 @@ const CartContent = ({ cart, userId, guestId }) => {
             </div>
           </div>
           <div className="">
-            <p>$ {product.price.toLocaleString()}</p>
-            <button onClick={()=> handleRemoveFromCart(product.productId, product.size, product.color)}>
+            <p>$ {(cart.totalPrice).toLocaleString()}</p>
+            <button
+              onClick={() =>
+                handleRemoveFromCart(
+                  product.productId,
+                  product.size,
+                  product.color,
+                )
+              }
+            >
               <RiDeleteBin3Line className="h-6 w-6 mt-2 text-red-600" />
             </button>
           </div>

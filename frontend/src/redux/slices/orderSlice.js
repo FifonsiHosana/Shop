@@ -34,12 +34,13 @@ export const fetchOrderDetails = createAsyncThunk(
           },
         },
       );
-     return response.data;
+      return response.data;
     } catch (error) {
       return rejectedWithValue(error.response.data);
     }
   },
 );
+
 const OrderSlice = createSlice({
   name: "orders",
   initialState: {
@@ -64,7 +65,7 @@ const OrderSlice = createSlice({
       .addCase(fetchUserOrders.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload.message;
-      }) 
+      })
       //fetch user orders
       .addCase(fetchOrderDetails.pending, (state) => {
         state.loading = true;
@@ -77,21 +78,8 @@ const OrderSlice = createSlice({
       .addCase(fetchOrderDetails.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload.message;
-      })
-        //fetch user orders
-      // .addCase(fetchUserOrders.pending, (state) => {
-      //   state.loading = true;
-      //   state.error = null;
-      // })
-      // .addCase(fetchUserOrders.fulfilled, (state, action) => {
-      //   state.loading = false;
-      //   state.orders = action.payload;
-      // })
-      // .addCase(fetchUserOrders.rejected, (state, action) => {
-      //   state.loading = false;
-      //   state.error = action.payload.message;
-      // })
+      });
   },
 });
 
-export default OrderSlice.reducer; 
+export default OrderSlice.reducer;

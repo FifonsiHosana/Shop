@@ -4,14 +4,6 @@ import { Link } from "react-router-dom";
 import { deleteProduct, fetchAdminProducts } from "../../redux/slices/adminProductSlice";
 
 const ProductManagement = () => {
-  // const products = [
-  //   {
-  //     _id: 122345,
-  //     name: "Shirt",
-  //     price: 110,
-  //     sku: 1222321,
-  //   },
-  // ];
 
   const dispatch =  useDispatch();
   const {products, loading, error} = useSelector((state)=>state.adminProducts);

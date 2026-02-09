@@ -16,10 +16,10 @@ const saveCartToStoreage = (cart) => {
   localStorage.setItem("cart", JSON.stringify(cart));
 };
 
-// Fetch cart for a user or gues
+// Fetch cart for a user or guest
 export const fetchCart = createAsyncThunk(
   "cart/fetchCart",
-  async ({ userId, guestId }, { RejectedWithValue }) => {
+  async ({ userId, guestId }, { rejectWithValue }) => {
     try {
       const response = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/cart`,
@@ -28,7 +28,7 @@ export const fetchCart = createAsyncThunk(
       return response.data;
     } catch (error) {
       console.error(error);
-      return RejectedWithValue(error.response.data);
+      return rejectWithValue(error.response.data);
     }
   },
 );
@@ -38,7 +38,7 @@ export const addToCart = createAsyncThunk(
   "cart/addToCart",
   async (
     { productId, quantity, size, color, guestId, userId },
-    { RejectedWithValue },
+    { rejectWithValue },
   ) => {
     try {
       const response = await axios.post(
@@ -54,7 +54,7 @@ export const addToCart = createAsyncThunk(
       );
       return response.data;
     } catch (error) {
-      return RejectedWithValue(error.response.data);
+      return rejectWithValue(error.response.data);
     }
   },
 );
