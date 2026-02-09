@@ -141,18 +141,66 @@ router.delete("/:id", protect, admin, async (req, res) => {
   }
 });
 
+// @route GET /api/products/best-seller
+// @desc Retrieve product with highest rating
+
+router.get("/best-seller", async (req, res) => {
+  try {
+    const bestSeller = await Product.findOne().sort({ rating: -1 });
+    if (bestSeller) {
+      res.json(bestSeller);
+    } else {
+      res.status(404).json({ message: "No best Seller found" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("server error");
+  }
+});
+
+//@route Get /api/products/new-arrivals
+router.get("/new-arrivals", async (req, res) => {
+  try {
+    const newArrivals = await Product.find().sort({ createdAt: -1 }).limit(8);
+    res.json(newArrivals);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server Error");
+  }
+});
+//@route GET /api/products/similar/:id
+router.get("/similar/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    const similarProducts = await Product.find({
+      _id: { $ne: id },
+      gender: product.gender,
+      category: product.category,
+    }).limit(4);
+
+    res.json(similarProducts);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server Error");
+  }
+});
+
 //@route Get /api/products
 
 router.get("/", async (req, res) => {
   try {
     const {
-      size,
+      sizes,
       color,
       collection,
       minPrice,
       maxPrice,
       gender,
-      images,
       sortBy,
       category,
       brand,
@@ -172,11 +220,11 @@ router.get("/", async (req, res) => {
     if (material) {
       query.material = { $in: material.split(",") };
     }
-    if (size) {
-      query.sizes = { $in: size.split(",") };
+    if (sizes) {
+      query.sizes = { $in: sizes.split(",") };
     }
     if (color) {
-      query.colors = { $in: [color] }.split(",");
+      query.colors = { $in: color.split(",") };
     }
     if (brand) {
       query.brand = { $in: brand.split(",") };
@@ -195,6 +243,7 @@ router.get("/", async (req, res) => {
         { description: { $regex: search, $options: "i" } },
       ];
     }
+
     //sort logic
     let sort = {};
     if (sortBy) {
@@ -225,34 +274,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-
-// @route GET /api/products/best-seller
-// @desc Retrieve product with highest rating
-
-router.get("/best-seller", async (req, res)=>{
-  try{
-    const bestSeller = await Product.findOne().sort({rating: -1});
-    if (bestSeller) {
-      res.json(bestSeller)
-    } else {res.status(404).json({message: "No best Seller found"});}
-  }catch(error){
-    console.error(error);
-    res.status(500).send("server error")
-  }
-});
-
-//@route Get /api/products/new-arrivals
-router.get("/new-arrivals", async (req,res)=>{
-  try{
-    const newArrivals = await Product.find().sort({createdAt: -1}).limit(8);
-    res.json(newArrivals)
-  }catch(error){
-    console.error(error);
-    res.status(500).send("Server Error");
-  }
-});
-
-
 // @route GET /api/pproducts/:id
 
 router.get("/:id", async (req, res) => {
@@ -262,34 +283,12 @@ router.get("/:id", async (req, res) => {
       res.json(product);
     } else {
       console.error(error);
-      res.status(500).send("server error")
+      res.status(500).send("server error");
     }
-  } catch (error) {}
+  } catch (error) {
+    console.log(error);
+    res.status(500).send("server error");
+  }
 });
-
-//@route GET /api/products/similar/:id
-router.get("/similar/:id", async (req, res)=> {
-  const {id} =req.params;
-   try{
-    const product = await Product.findById(id);
-
-    if(!product){
-      return res.status(404).json({message: "Product not found"});
-
-    }
-    const similarProducts = await Product.find({
-      _id:{$ne: id},
-      gender:product.gender,
-      category: product.category,
-    }).limit(4);
-
-    res.json(similarProducts);
-
-   }catch(error){
-    console.error(error);
-    res.status(500).send("Server Error");
-   }
-});
-
 
 module.exports = router;
