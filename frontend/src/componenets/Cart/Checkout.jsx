@@ -4,7 +4,9 @@ import PaypalButton from "./PaypalButton";
 import { useDispatch, useSelector } from "react-redux";
 import { createCheckout } from "../../redux/slices/checkoutSlice";
 import axios from "axios";
+import PaystackPop from "@paystack/inline-js";
 
+const paystackInstance = new PaystackPop();
 // const cart = {
 //   Products: [
 //     {
@@ -51,6 +53,31 @@ const Checkout = () => {
     }
   }, [cart, navigate]);
 
+  const paystackConvert = cart.totalPrice * 100;
+
+
+   const handlePaystackPopupOnClick = (totalPrice) => {
+    paystackInstance.checkout({
+    key: "pk_test_a57c910266bd39b940c65d81d04cbab62b0e2887",
+    email: "Alhassan@gmail.com",
+    amount: totalPrice,
+    onSuccess: (transaction) => {
+      handlePaymentSuccess();
+      console.log(transaction);
+    },
+    onLoad: (response) => {
+      console.log("onLoad: ", response);
+    },
+    onCancel: () => {
+      console.log("Transaction Cancelled");
+    },
+    onError: (error) => {
+      console.log("Error: ", error.message);
+    },
+  });
+  };
+  
+
   const handleCreateCheckout = async (e) => {
     e.preventDefault();
     if (cart && cart.products.length > 0) {
@@ -58,7 +85,7 @@ const Checkout = () => {
         createCheckout({
           checkoutItems: cart.products,
           shippingAddress,
-          paymentMethod: "PayPal",
+          paymentMethod: "Paystack",
           totalPrice: cart.totalPrice,
         }),
       );
@@ -66,34 +93,33 @@ const Checkout = () => {
         setCheckouId(res.payload._id);
       }
     }
-  };   
-  
+  };
+
   const handleFinalizeCheckout = async (checkoutId) => {
-      try {
-        const token = localStorage.getItem("userToken");
-        // Debug: Check token
-    console.log("Token:", token);
-    console.log("Checkout ID:", checkoutId);
-    
-    if (!token) {
-      console.error("No token found!");
-      navigate('/login?redirect=checkout');
-      return;}
+    try {
+      const token = localStorage.getItem("userToken");
 
-        await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/api/checkout/${checkoutId}/finalize`,{},
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("userToken")}`,
-            },
-          },
-        );
-
-        navigate("/order-confirmation");
-      } catch (error) {
-        console.error(error);
+      if (!token) {
+        console.error("No token found!");
+        navigate("/login?redirect=checkout");
+        return;
       }
-    };
+
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/checkout/${checkoutId}/finalize`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+          },
+        },
+      );
+
+      navigate("/order-confirmation");
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const handlePaymentSuccess = async (details) => {
     try {
@@ -106,13 +132,11 @@ const Checkout = () => {
           },
         },
       );
-      
-        await handleFinalizeCheckout(checkoutId);
+
+      await handleFinalizeCheckout(checkoutId);
     } catch (error) {
       console.error(error);
     }
-
-
   };
 
   if (loading) return <p>loading cart...</p>;
@@ -265,12 +289,19 @@ const Checkout = () => {
               </button>
             ) : (
               <div className=" ">
-                <h3 className="text-lg mb-4">Pay with Paypal</h3>
+                <h3 className="text-lg mb-4 ">Pay with Paystack</h3>
+                <button
+                  className="bg-blue-300 p-3 text-2xl w-full text-center rounded-sm cursor-pointer hover:bg-blue-400 mb-7"
+                  onClick={() => handlePaystackPopupOnClick(paystackConvert)}
+                >
+                  Paystack
+                </button>
+                {/* <h3 className="text-lg mb-4">Pay with Paypal</h3>
                 <PaypalButton
                   amount={cart.totalPrice}
                   onSuccess={handlePaymentSuccess}
                   onError={(err) => alert("Payment failed:", { err })}
-                />
+                /> */}
               </div>
             )}
           </div>

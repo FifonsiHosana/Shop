@@ -13,6 +13,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@paystack/inline-js": "^2.22.7",
     "@reduxjs/toolkit": "^2.11.2",
     "axios": "^1.13.4",
     "bcryptjs": "^3.0.3",

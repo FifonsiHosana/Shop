@@ -55,7 +55,7 @@ const OrderDetailsPage = () => {
             </div>
             <div>
               <h4 className="text-lg font-semibold mb-2">Payment Info</h4>
-              <p>Shipping Method: {orderDetails.shippingMethod}</p>
+              <p>Shipping Method: Regular</p>
               <p>
                 Address:{" "}
                 {`${orderDetails.shippingAddress.city}, ${orderDetails.shippingAddress.country}`}
@@ -89,15 +89,19 @@ const OrderDetailsPage = () => {
                         {item.name}
                       </Link>
                     </td>
-                    <td className="py-2 px-4 ">${item.price}</td>
-                    <td className="py-2 px-4 ">${item.quantity}</td>
-                    <td className="py-2 px-4 ">${item.price * item.quantity}</td>
+                    <td className="py-2 px-4 text-center ">${item.price}</td>
+                    <td className="py-2 px-4 text-center">{item.quantity}</td>
+                    <td className="py-2 px-4 text-center">
+                      ${item.price * item.quantity}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <Link to="/my-orders" className="text-blue-400 hover:underline" >Back to my orders</Link>
+          <Link to="/my-orders" className="text-blue-400 hover:underline">
+            Back to my orders
+          </Link>
         </div>
       )}
     </div>

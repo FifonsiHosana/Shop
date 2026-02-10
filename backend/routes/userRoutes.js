@@ -35,7 +35,7 @@ router.post("/register", async (req, res) => {
         res.status(201).json({
           user: {
             _id: user._id,
-            name: user.name, // Fixed typo: was 'mane'
+            name: user.name, 
             email: user.email,
             role: user.role,
           },

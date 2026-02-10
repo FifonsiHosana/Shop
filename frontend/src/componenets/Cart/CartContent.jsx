@@ -25,7 +25,6 @@ const CartContent = ({ cart, userId, guestId }) => {
   const handleRemoveFromCart = (productId, size, color)=>{
     dispatch(removeFromCart({ productId, guestId, userId, size, color }));
   };
-console.log("these are the cart items",cart.products[0]);
   
   
   return (
@@ -84,7 +83,7 @@ console.log("these are the cart items",cart.products[0]);
             </div>
           </div>
           <div className="">
-            <p>$ {(cart.totalPrice).toLocaleString()}</p>
+            <p>$ {product.price * product.quantity}</p>
             <button
               onClick={() =>
                 handleRemoveFromCart(

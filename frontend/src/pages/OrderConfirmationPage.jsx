@@ -15,7 +15,6 @@ const OrderConfirmationPage = () => {
     }else{
       navigate("/my-orders");
      }
-     console.log(checkout)
   }, [checkout,navigate, dispatch]);
 
   const calculateEstimatedDelivery = (createdAt) => {
