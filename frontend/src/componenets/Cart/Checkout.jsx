@@ -36,7 +36,6 @@ const Checkout = () => {
   const { cart, error } = useSelector((state) => state.cart);
   const { loading } = useSelector((state) => state.checkout);
   const { paymentUrl } = useSelector((state) => state.payment);
-  // const { paymentUrl } = useSelector((state) => state.payment);
 
   const [checkoutId, setCheckoutId] = useState(null);
   // const [checkoutItems, setCheckoutItems] = useState(null);
@@ -59,7 +58,7 @@ const Checkout = () => {
 
   const paystackConvert = cart.totalPrice * 100;
 
-  //const handlePaystackPopupOnClick = async () => {
+  const handlePaystackPopupOnClick = async () => {
     //   paystackInstance.checkout({
     //   key: "pk_test_a57c910266bd39b940c65d81d04cbab62b0e2887",
     //   email: "Alhassan@gmail.com",
@@ -78,7 +77,7 @@ const Checkout = () => {
     //     console.log("Error: ", error.message);
     //   },
     // });
-  //};
+  };
 
   const handleCreateCheckout = async (e) => {
     e.preventDefault();
@@ -97,39 +96,44 @@ const Checkout = () => {
     }
   };
 
-  useEffect(()=>{
-    if (checkoutId){
-    dispatch(initializePayment(checkoutId))
-    console.log(checkoutId);
-    location.href = paymentUrl;
+  useEffect(() => {
+    if (checkoutId) {
+      dispatch(initializePayment(checkoutId));
     }
-  },[checkoutId,dispatch])
+  }, [checkoutId, dispatch, paymentUrl]);
+  
+  useEffect(() => {
+    if (paymentUrl) {
+      location.href = paymentUrl;
+    }
+  }, [checkoutId, dispatch, paymentUrl]);
 
-  // const handleFinalizeCheckout = async (checkoutId) => {
-  //   try {
-  //     const token = localStorage.getItem("userToken");
 
-  //     if (!token) {
-  //       console.error("No token found!");
-  //       navigate("/login?redirect=checkout");
-  //       return;
-  //     }
+  const handleFinalizeCheckout = async (checkoutId) => {
+    try {
+      const token = localStorage.getItem("userToken");
 
-  //     await axios.post(
-  //       `${import.meta.env.VITE_BACKEND_URL}/api/checkout/${checkoutId}/finalize`,
-  //       {},
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${localStorage.getItem("userToken")}`,
-  //         },
-  //       },
-  //     );
+      if (!token) {
+        console.error("No token found!");
+        navigate("/login?redirect=checkout");
+        return;
+      }
 
-  //     navigate("/order-confirmation");
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/checkout/${checkoutId}/finalize`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+          },
+        },
+      );
+
+      navigate("/order-confirmation");
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   // const handlePaymentSuccess = async (details) => {
   //   try {
