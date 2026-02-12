@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import PaypalButton from "./PaypalButton";
+//import PaypalButton from "./PaypalButton";
 import { useDispatch, useSelector } from "react-redux";
 import { createCheckout } from "../../redux/slices/checkoutSlice";
 import axios from "axios";
-import PaystackPop from "@paystack/inline-js";
+// import PaystackPop from "@paystack/inline-js";
+import { initializePayment } from "../../redux/slices/paystackSlice";
 
-const paystackInstance = new PaystackPop();
+// const paystackInstance = new PaystackPop();
 // const cart = {
 //   Products: [
 //     {
@@ -34,8 +35,11 @@ const Checkout = () => {
   const { user } = useSelector((state) => state.auth);
   const { cart, error } = useSelector((state) => state.cart);
   const { loading } = useSelector((state) => state.checkout);
+  const { paymentUrl } = useSelector((state) => state.payment);
+  // const { paymentUrl } = useSelector((state) => state.payment);
 
-  const [checkoutId, setCheckouId] = useState(null);
+  const [checkoutId, setCheckoutId] = useState(null);
+  // const [checkoutItems, setCheckoutItems] = useState(null);
   const [shippingAddress, setShippingAddress] = useState({
     firstName: "",
     lastName: "",
@@ -51,32 +55,30 @@ const Checkout = () => {
     if (!cart || !cart.products || cart.products.length === 0) {
       navigate("/");
     }
-  }, [cart, navigate]);
+  }, [cart, navigate, dispatch]);
 
   const paystackConvert = cart.totalPrice * 100;
 
-
-   const handlePaystackPopupOnClick = (totalPrice) => {
-    paystackInstance.checkout({
-    key: "pk_test_a57c910266bd39b940c65d81d04cbab62b0e2887",
-    email: "Alhassan@gmail.com",
-    amount: totalPrice,
-    onSuccess: (transaction) => {
-      handlePaymentSuccess();
-      console.log(transaction);
-    },
-    onLoad: (response) => {
-      console.log("onLoad: ", response);
-    },
-    onCancel: () => {
-      console.log("Transaction Cancelled");
-    },
-    onError: (error) => {
-      console.log("Error: ", error.message);
-    },
-  });
-  };
-  
+  //const handlePaystackPopupOnClick = async () => {
+    //   paystackInstance.checkout({
+    //   key: "pk_test_a57c910266bd39b940c65d81d04cbab62b0e2887",
+    //   email: "Alhassan@gmail.com",
+    //   amount: totalPrice,
+    //   onSuccess: (transaction) => {
+    //     handlePaymentSuccess();
+    //     console.log(transaction);
+    //   },
+    //   onLoad: (response) => {
+    //     console.log("onLoad: ", response);
+    //   },
+    //   onCancel: () => {
+    //     console.log("Transaction Cancelled");
+    //   },
+    //   onError: (error) => {
+    //     console.log("Error: ", error.message);
+    //   },
+    // });
+  //};
 
   const handleCreateCheckout = async (e) => {
     e.preventDefault();
@@ -90,54 +92,62 @@ const Checkout = () => {
         }),
       );
       if (res.payload && res.payload._id) {
-        setCheckouId(res.payload._id);
+        setCheckoutId(res.payload._id);
       }
     }
   };
 
-  const handleFinalizeCheckout = async (checkoutId) => {
-    try {
-      const token = localStorage.getItem("userToken");
-
-      if (!token) {
-        console.error("No token found!");
-        navigate("/login?redirect=checkout");
-        return;
-      }
-
-      await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/checkout/${checkoutId}/finalize`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("userToken")}`,
-          },
-        },
-      );
-
-      navigate("/order-confirmation");
-    } catch (error) {
-      console.error(error);
+  useEffect(()=>{
+    if (checkoutId){
+    dispatch(initializePayment(checkoutId))
+    console.log(checkoutId);
+    location.href = paymentUrl;
     }
-  };
+  },[checkoutId,dispatch])
 
-  const handlePaymentSuccess = async (details) => {
-    try {
-      await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/api/checkout/${checkoutId}/pay`,
-        { paymentStatus: "paid", paymentDetails: details },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("userToken")}`,
-          },
-        },
-      );
+  // const handleFinalizeCheckout = async (checkoutId) => {
+  //   try {
+  //     const token = localStorage.getItem("userToken");
 
-      await handleFinalizeCheckout(checkoutId);
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  //     if (!token) {
+  //       console.error("No token found!");
+  //       navigate("/login?redirect=checkout");
+  //       return;
+  //     }
+
+  //     await axios.post(
+  //       `${import.meta.env.VITE_BACKEND_URL}/api/checkout/${checkoutId}/finalize`,
+  //       {},
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+  //         },
+  //       },
+  //     );
+
+  //     navigate("/order-confirmation");
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
+
+  // const handlePaymentSuccess = async (details) => {
+  //   try {
+  //     await axios.put(
+  //       `${import.meta.env.VITE_BACKEND_URL}/api/checkout/${checkoutId}/pay`,
+  //       { paymentStatus: "paid", paymentDetails: details },
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+  //         },
+  //       },
+  //     );
+
+  //     await handleFinalizeCheckout(checkoutId);
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
 
   if (loading) return <p>loading cart...</p>;
   if (error) return <p>Error:{error}</p>;
@@ -213,7 +223,6 @@ const Checkout = () => {
             />
           </div>
           <div className="mb-4 grid grid-cols-2 gap-4">
-            {" "}
             <div className="">
               <label htmlFor="" className="block text-gray-700">
                 City
@@ -280,30 +289,31 @@ const Checkout = () => {
             />
           </div>{" "}
           <div className="mt-6">
-            {!checkoutId ? (
+            {!checkoutId && (
               <button
                 type="submit"
                 className="w-full bg-black text-white py-3 rounded"
               >
                 Continue Payment
               </button>
-            ) : (
+            )}
+            {/*  ) : (
               <div className=" ">
                 <h3 className="text-lg mb-4 ">Pay with Paystack</h3>
                 <button
                   className="bg-blue-300 p-3 text-2xl w-full text-center rounded-sm cursor-pointer hover:bg-blue-400 mb-7"
-                  onClick={() => handlePaystackPopupOnClick(paystackConvert)}
+                  // onClick={() => handlePaystackPopupOnClick(paystackConvert)}
                 >
                   Paystack
                 </button>
-                {/* <h3 className="text-lg mb-4">Pay with Paypal</h3>
-                <PaypalButton
+                 <h3 className="text-lg mb-4">Pay with Paypal</h3>
+                 <PaypalButton
                   amount={cart.totalPrice}
                   onSuccess={handlePaymentSuccess}
-                  onError={(err) => alert("Payment failed:", { err })}
-                /> */}
+                  onError={(err) => alert("Payment failed:", { err })} 
+                /> 
               </div>
-            )}
+            )}*/}
           </div>
         </form>
       </div>
