@@ -72,7 +72,11 @@ const orderSchema = new mongoose.Schema({
     type:String,
     enum:["Processing", "Shipped", "Delivered", "Cancelled"],
     default: "Processing",
-  }
+  },
+  checkoutId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Checkout",
+},
 }, {timestamps:true});
 
 module.exports = mongoose.model("order", orderSchema);
