@@ -2,26 +2,43 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { clearCart } from "../redux/slices/cartSlice";
+import { fetchCheckoutById } from "../redux/slices/checkoutSlice";
 
 const OrderConfirmationPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { checkout } = useSelector((state) => state.checkout);
+  const {checkout, loading} = useSelector((state)=>state.checkout);
 
-  useEffect(() => {
-    if (checkout && checkout._id) {
-      dispatch(clearCart());
-      localStorage.removeItem("cart");
-    }else{
-      navigate("/my-orders");
-     }
-  }, [checkout,navigate, dispatch]);
+  // useEffect(() => {
+  //   if (checkout && checkout._id) {
+  //     dispatch(clearCart());
+  //     localStorage.removeItem("cart");
+  //   }else{
+  //     navigate("/my-orders");
+  //    }
+  // }, [checkout,navigate, dispatch]);
+    useEffect(() => {
+      const pendingCheckoutId = localStorage.getItem("pendingCheckoutId");
+
+      if (pendingCheckoutId) {
+        dispatch(fetchCheckoutById(pendingCheckoutId));
+        dispatch(clearCart());
+        localStorage.removeItem("cart");
+        localStorage.removeItem("pendingCheckoutId"); // 👈 clean up
+      } else {
+        navigate("/my-orders");
+      }
+    }, [dispatch, navigate]);
 
   const calculateEstimatedDelivery = (createdAt) => {
     const orederDate = new Date(createdAt);
     orederDate.setDate(orederDate.getDate() + 10);
     return orederDate.toLocaleDateString();
   };
+
+
+  if (loading) return <p>Loading your order...</p>;
+  if (!checkout) return null;
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white ">

@@ -34,6 +34,17 @@ router.post("/", protect, async (req, res) => {
   }
 });
 
+router.get("/:id", protect, async (req, res) => {
+  try {
+    const checkout = await Checkout.findById(req.params.id);
+    if (!checkout)
+      return res.status(404).json({ message: "Checkout not found" });
+    res.json(checkout);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 //@route PUT /api/checkout/:id/pay
 router.put("/:id/pay", protect, async (req, res) => {
   const { paymentStatus, paymentDetails } = req.body;

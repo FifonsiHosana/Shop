@@ -98,9 +98,10 @@ const Checkout = () => {
 
   useEffect(() => {
     if (checkoutId) {
-      dispatch(initializePayment(checkoutId));
+      localStorage.setItem("pendingCheckoutId", checkoutId);
+     dispatch(initializePayment(checkoutId));
     }
-  }, [checkoutId, dispatch, paymentUrl]);
+  }, [checkoutId, dispatch,paymentUrl]);
   
   useEffect(() => {
     if (paymentUrl) {

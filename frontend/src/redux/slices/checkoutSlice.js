@@ -22,6 +22,25 @@ export const createCheckout = createAsyncThunk(
   },
 );
 
+export const fetchCheckoutById = createAsyncThunk(
+  "checkout/fetchById",
+  async (checkoutId, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/checkout/${checkoutId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+          },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  },
+);
+
 const checkoutSlice = createSlice({
   name: "checkout",
   initialState: {
@@ -39,10 +58,21 @@ const checkoutSlice = createSlice({
       .addCase(createCheckout.fulfilled, (state, action) => {
         state.loading = false;
         state.checkout = action.payload;
+        console.log(state.checkout);
       })
       .addCase(createCheckout.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload.message;
+      }).addCase(fetchCheckoutById.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchCheckoutById.fulfilled, (state, action) => {
+        state.loading = false;
+        state.checkout = action.payload;
+      })
+      .addCase(fetchCheckoutById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
