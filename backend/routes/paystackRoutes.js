@@ -3,146 +3,199 @@ const crypto = require("crypto");
 const Order = require("../models/Order");
 const { Paystack } = require("paystack-sdk");
 const Checkout = require("../models/Checkout");
+const Cart = require("../models/Cart");
 
-const secret = process.env.PAYSTACK_SECRET_KEY;
 const router = express.Router();
-const paystack = new Paystack(secret);
+const paystack = new Paystack(process.env.PAYSTACK_SECRET_KEY);
 
-// router.post("/mywebhookurl", async function (req, res) {
-//   //validate event
-//   const hash = crypto
-//     .createHmac("sha512", secret)
-//     .update(JSON.stringify(req.body))
-//     .digest("hex");
-//   if (hash !== req.headers["x-paystack-signature"]) {
-//     return res.status(401).send("Invalid signature");
-//   }
-//   // Retrieve the request's body
-//   const event = req.body;
-//   // Do something with event
-//   console.log(event);
+const finalizeCheckoutFromPayment = async ({ checkoutId, paymentDetails }) => {
+  const checkout = await Checkout.findById(checkoutId);
 
-//   if (event.event === "charge.success") {
-//     const checkoutId = event.data.metadata.orderId;
-//     const checkout = await Checkout.findById(checkoutId);
-//     const order = await Order.findById(checkoutId);
+  if (!checkout) {
+    return { status: "not_found" };
+  }
 
-//     //Idempotency check
-//     if (!order || order.isPaid) {
-//       return res.sendStatus(200);
-//     }
+  const existingOrder = await Order.findOne({ checkoutId: checkout._id });
+  if (existingOrder) {
+    return { status: "already_processed", order: existingOrder, checkout };
+  }
 
-//     const newOrder = await Order.create({
-//       user: checkout.user,
-//       checkoutId: checkout._id,
-//       orderItems: checkout.checkoutItems,
-//       shippingAddress: checkout.shippingAddress,
-//       paymentMethod: "Paystack",
-//       totalPrice: checkout.totalPrice,
-//       isPaid: true,
-//       paidAt: Date.now(),
-//       paymentStatus: "paid",
-//       paymentDetails: event.data,
-//       isDelivered: false,
-//     });
-//     checkout.isPaid = true;
-//     checkout.paymentStatus = "paid";
-//     checkout.finalizedAt = Date.now();
-//     await checkout.save();
-//     // if (order) {
-//     //   order.isPaid = true;
-//     //   order.paymentStatus = "paid";
-//     //   order.paidAt = Date.now();
-//     //   order.paymentMethod = "Paystack";
-//     // }
-//     // await order.save();
-//   }
+  const paidAt = new Date();
 
-//   res.sendStatus(200);
-//   console.log("Order created:", newOrder._id);
-// });
+  const newOrder = await Order.create({
+    user: checkout.user,
+    checkoutId: checkout._id,
+    orderItems: checkout.checkoutItems,
+    shippingAddress: checkout.shippingAddress,
+    paymentMethod: "Paystack",
+    totalPrice: checkout.totalPrice,
+    isPaid: true,
+    paidAt,
+    paymentStatus: "paid",
+    paymentDetails,
+    isDelivered: false,
+  });
+
+  checkout.isPaid = true;
+  checkout.paymentStatus = "paid";
+  checkout.paidAt = paidAt;
+  checkout.paymentDetails = paymentDetails;
+  checkout.isFinalized = true;
+  checkout.finalizedAt = paidAt;
+  await checkout.save();
+
+  await Cart.findOneAndDelete({ user: checkout.user });
+
+  return { status: "created", order: newOrder, checkout };
+};
 
 router.post("/mywebhookurl", async function (req, res) {
-  // Validate signature
+  const secret = process.env.PAYSTACK_SECRET_KEY;
+  if (!secret) {
+    console.error("PAYSTACK_SECRET_KEY is not configured");
+    return res.status(500).send("Server misconfigured");
+  }
+
+  const rawPayload = req.rawBody || JSON.stringify(req.body);
+
   const hash = crypto
     .createHmac("sha512", secret)
-    .update(JSON.stringify(req.body))
+    .update(rawPayload)
     .digest("hex");
 
   if (hash !== req.headers["x-paystack-signature"]) {
+    console.error("Invalid Paystack webhook signature");
     return res.status(401).send("Invalid signature");
   }
 
   const event = req.body;
-  console.log(event);
+  console.log("Paystack webhook event:", event.event);
 
-  if (event.event === "charge.success") {
-    const checkoutId = event.data.metadata.orderId;
-
-    try {
-      const checkout = await Checkout.findById(checkoutId);
-
-      if (!checkout) {
-        console.error("Checkout not found:", checkoutId);
-        return res.sendStatus(200);
-      }
-
-      const existingOrder = await Order.findOne({ checkoutId: checkout._id });
-      if (existingOrder) {
-        console.log("Order already exists, skipping");
-        return res.sendStatus(200);
-      }
-
-      const newOrder = await Order.create({
-        user: checkout.user,
-        checkoutId: checkout._id,
-        orderItems: checkout.checkoutItems,
-        shippingAddress: checkout.shippingAddress,
-        paymentMethod: "Paystack",
-        totalPrice: checkout.totalPrice,
-        isPaid: true,
-        paidAt: Date.now(),
-        paymentStatus: "paid",
-        paymentDetails: event.data,
-        isDelivered: false,
-      });
-
-      checkout.isPaid = true;
-      checkout.paymentStatus = "paid";
-      checkout.finalizedAt = Date.now();
-      await checkout.save();
-
-      console.log("Order created:", newOrder._id); // ✅ inside try, before res
-    } catch (error) {
-      console.error("Webhook error:", error);
-    }
+  if (event.event !== "charge.success") {
+    return res.sendStatus(200);
   }
 
-  // ✅ always send 200 at the end so Paystack doesn't retry
-  res.sendStatus(200);
+  const checkoutId = event.data?.metadata?.orderId;
+
+  if (!checkoutId) {
+    console.error("Missing checkoutId in Paystack webhook metadata", event.data);
+    return res.sendStatus(200);
+  }
+
+  try {
+    const result = await finalizeCheckoutFromPayment({
+      checkoutId,
+      paymentDetails: event.data,
+    });
+
+    if (result.status === "not_found") {
+      console.error("Checkout not found for webhook checkoutId:", checkoutId);
+      return res.sendStatus(200);
+    }
+
+    if (result.status === "already_processed") {
+      console.log("Webhook ignored: checkout already processed", checkoutId);
+      return res.sendStatus(200);
+    }
+
+    console.log("Webhook order created:", result.order._id.toString());
+  } catch (error) {
+    console.error("Webhook processing error:", error);
+  }
+
+  return res.sendStatus(200);
 });
 
 router.post("/intializePayment", async function (req, res) {
   try {
+    const secret = process.env.PAYSTACK_SECRET_KEY;
+    if (!secret) {
+      return res
+        .status(500)
+        .json({ message: "PAYSTACK_SECRET_KEY is not configured" });
+    }
+
     const { checkoutId } = req.body;
     if (!checkoutId) {
-      console.log("order not found");
-      return res.status(404).send("order not found/valid");
+      return res.status(400).json({ message: "checkoutId is required" });
     }
+
     const checkout = await Checkout.findById(checkoutId).populate("user");
+    if (!checkout) {
+      return res.status(404).json({ message: "Checkout not found" });
+    }
+
+    const frontendUrl = process.env.FRONTEND_URL;
+    const callback_url = frontendUrl
+      ? `${frontendUrl}/order-confirmation?checkoutId=${checkout._id.toString()}`
+      : undefined;
+
     const response = await paystack.transaction.initialize({
-      email: checkout.user.email || "Salamatu@gmail.com",
+      email: checkout.user.email || "fallback@email.com",
       amount: checkout.totalPrice * 100,
       metadata: {
         orderId: checkout._id.toString(),
       },
+      callback_url,
     });
-    console.log(response);
-    console.log("Full Paystack response:", JSON.stringify(response, null, 2));
-    res.status(201).json(response.data);
+
+    return res.status(201).json(response.data);
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "server Error" });
+    console.error("Paystack initialize error:", error?.response?.data || error);
+    return res.status(500).json({ message: "Server Error" });
+  }
+});
+
+router.post("/verifyPayment", async function (req, res) {
+  try {
+    const secret = process.env.PAYSTACK_SECRET_KEY;
+    if (!secret) {
+      return res
+        .status(500)
+        .json({ message: "PAYSTACK_SECRET_KEY is not configured" });
+    }
+
+    const { reference, checkoutId } = req.body;
+
+    if (!reference || !checkoutId) {
+      return res
+        .status(400)
+        .json({ message: "reference and checkoutId are required" });
+    }
+
+    const verification = await paystack.transaction.verify({ reference });
+    const data = verification?.data;
+
+    if (!data || data.status !== "success") {
+      return res.status(400).json({ message: "Payment not successful", data });
+    }
+
+    const metadataCheckoutId = data?.metadata?.orderId;
+    if (metadataCheckoutId && metadataCheckoutId !== checkoutId) {
+      return res.status(400).json({ message: "checkoutId mismatch in metadata" });
+    }
+
+    const result = await finalizeCheckoutFromPayment({
+      checkoutId,
+      paymentDetails: data,
+    });
+
+    if (result.status === "not_found") {
+      return res.status(404).json({ message: "Checkout not found" });
+    }
+
+    return res.status(200).json({
+      message:
+        result.status === "already_processed"
+          ? "Payment already processed"
+          : "Payment verified and order created",
+      orderId: result.order?._id,
+      checkoutId,
+      status: result.status,
+    });
+  } catch (error) {
+    console.error("Paystack verify error:", error?.response?.data || error);
+    return res.status(500).json({ message: "Server Error" });
   }
 });
 
