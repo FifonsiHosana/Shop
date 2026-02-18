@@ -131,6 +131,9 @@ router.post("/mywebhookurl", async function (req, res) {
     } catch (error) {
       console.error("Webhook error:", error);
     }
+  }else{
+    console.log("Webhook did not fire event not successful:",event);
+    res.sendStatus(500);
   }
 
   res.sendStatus(200);
