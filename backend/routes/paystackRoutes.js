@@ -144,6 +144,7 @@ router.post("/intializePayment", async function (req, res) {
             .status(500)
             .json({ message: "PAYSTACK_SECRET_KEY is not configured" });
         }
+        const paystack = new Paystack(secret);
 
     const { checkoutId } = req.body;
     if (!checkoutId) {
