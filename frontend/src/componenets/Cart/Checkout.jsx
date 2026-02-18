@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 //import PaypalButton from "./PaypalButton";
 import { useDispatch, useSelector } from "react-redux";
 import { createCheckout } from "../../redux/slices/checkoutSlice";
-import axios from "axios";
+// import axios from "axios";
 // import PaystackPop from "@paystack/inline-js";
 import { initializePayment } from "../../redux/slices/paystackSlice";
 
@@ -56,29 +56,6 @@ const Checkout = () => {
     }
   }, [cart, navigate, dispatch]);
 
-  const paystackConvert = cart.totalPrice * 100;
-
-  const handlePaystackPopupOnClick = async () => {
-    //   paystackInstance.checkout({
-    //   key: "pk_test_a57c910266bd39b940c65d81d04cbab62b0e2887",
-    //   email: "Alhassan@gmail.com",
-    //   amount: totalPrice,
-    //   onSuccess: (transaction) => {
-    //     handlePaymentSuccess();
-    //     console.log(transaction);
-    //   },
-    //   onLoad: (response) => {
-    //     console.log("onLoad: ", response);
-    //   },
-    //   onCancel: () => {
-    //     console.log("Transaction Cancelled");
-    //   },
-    //   onError: (error) => {
-    //     console.log("Error: ", error.message);
-    //   },
-    // });
-  };
-
   const handleCreateCheckout = async (e) => {
     e.preventDefault();
     if (cart && cart.products.length > 0) {
@@ -110,31 +87,31 @@ const Checkout = () => {
   }, [checkoutId, dispatch, paymentUrl]);
 
 
-  const handleFinalizeCheckout = async (checkoutId) => {
-    try {
-      const token = localStorage.getItem("userToken");
+  // const handleFinalizeCheckout = async (checkoutId) => {
+  //   try {
+  //     const token = localStorage.getItem("userToken");
 
-      if (!token) {
-        console.error("No token found!");
-        navigate("/login?redirect=checkout");
-        return;
-      }
+  //     if (!token) {
+  //       console.error("No token found!");
+  //       navigate("/login?redirect=checkout");
+  //       return;
+  //     }
 
-      await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/checkout/${checkoutId}/finalize`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("userToken")}`,
-          },
-        },
-      );
+  //     await axios.post(
+  //       `${import.meta.env.VITE_BACKEND_URL}/api/checkout/${checkoutId}/finalize`,
+  //       {},
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+  //         },
+  //       },
+  //     );
 
-      navigate("/order-confirmation");
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  //     navigate("/order-confirmation");
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
 
   // const handlePaymentSuccess = async (details) => {
   //   try {

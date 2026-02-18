@@ -3,10 +3,11 @@ const crypto = require("crypto");
 const Order = require("../models/Order");
 const { Paystack } = require("paystack-sdk");
 const Checkout = require("../models/Checkout");
+const Cart = require("../models/Cart");
 
-const secret = process.env.PAYSTACK_SECRET_KEY;
+// const secret = process.env.PAYSTACK_SECRET_KEY;
 const router = express.Router();
-const paystack = new Paystack(secret);
+// const paystack = new Paystack(secret);
 
 // router.post("/mywebhookurl", async function (req, res) {
 //   //validate event
@@ -63,10 +64,17 @@ const paystack = new Paystack(secret);
 // });
 
 router.post("/mywebhookurl", async function (req, res) {
+  const secret = process.env.PAYSTACK_SECRET_KEY;
+  if (!secret) {
+    console.error("PAYSTACK_SECRET_KEY is not configured");
+    return res.status(500).send("Server misconfigured");
+  }
+
+  const rawPayload = req.rawBody || JSON.stringify(req.body);
   // Validate signature
   const hash = crypto
     .createHmac("sha512", secret)
-    .update(JSON.stringify(req.body))
+    .update(rawPayload)
     .digest("hex");
 
   if (hash !== req.headers["x-paystack-signature"]) {
@@ -74,10 +82,14 @@ router.post("/mywebhookurl", async function (req, res) {
   }
 
   const event = req.body;
-  console.log(event);
+  console.log("Paystack event", event.event);
 
   if (event.event === "charge.success") {
-    const checkoutId = event.data.metadata.orderId;
+    const checkoutId = event?.data?.metadata?.orderId;
+    if (!checkoutId) {
+      console.error("Missing checkout id in webhook metadata", event.data);
+      return res.sendStatus(200);
+    }
 
     try {
       const checkout = await Checkout.findById(checkoutId);
@@ -109,21 +121,30 @@ router.post("/mywebhookurl", async function (req, res) {
 
       checkout.isPaid = true;
       checkout.paymentStatus = "paid";
+      checkout.paidAt = Date.now();
+      checkout.paymentDetails = event.data;
+      checkout.isFinalized = true;
       checkout.finalizedAt = Date.now();
       await checkout.save();
-
-      console.log("Order created:", newOrder._id); // ✅ inside try, before res
+      await Cart.findOneAndDelete({ user: checkout.user });
+      console.log("Order created:", newOrder._id);
     } catch (error) {
       console.error("Webhook error:", error);
     }
   }
 
-  // ✅ always send 200 at the end so Paystack doesn't retry
   res.sendStatus(200);
 });
 
 router.post("/intializePayment", async function (req, res) {
   try {
+        const secret = process.env.PAYSTACK_SECRET_KEY;
+        if (!secret) {
+          return res
+            .status(500)
+            .json({ message: "PAYSTACK_SECRET_KEY is not configured" });
+        }
+
     const { checkoutId } = req.body;
     if (!checkoutId) {
       console.log("order not found");

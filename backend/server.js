@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require ("dotenv");
-
+dotenv.config();
 const connectDB = require("./config/db");
 const userRoutes = require("./routes/userRoutes");
 const productsRoutes = require("./routes/productsRoutes");
@@ -17,10 +17,16 @@ const paystackRoutes = require("./routes/paystackRoutes");
 
 
 const app = express();
-app.use(express.json());
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      req.rawBody = buf?.toString("utf8") || "";
+    },
+  }),
+);
 app.use(cors()); 
 
-dotenv.config();
+
 
 console.log(process.env.PORT)
 
