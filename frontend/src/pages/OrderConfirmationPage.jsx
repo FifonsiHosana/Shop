@@ -1,41 +1,53 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
 import { clearCart } from "../redux/slices/cartSlice";
 import { fetchCheckoutById } from "../redux/slices/checkoutSlice";
 
 const OrderConfirmationPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const {checkout, loading} = useSelector((state)=>state.checkout);
+  const location = useLocation();
+  const { checkout, loading } = useSelector((state) => state.checkout);
 
-  // useEffect(() => {
-  //   if (checkout && checkout._id) {
-  //     dispatch(clearCart());
-  //     localStorage.removeItem("cart");
-  //   }else{
-  //     navigate("/my-orders");
-  //    }
-  // }, [checkout,navigate, dispatch]);
-    useEffect(() => {
-      const pendingCheckoutId = localStorage.getItem("pendingCheckoutId");
+  useEffect(() => {
+    const query = new URLSearchParams(location.search);
+    const reference = query.get("reference") || query.get("trxref");
+    const checkoutIdFromQuery = query.get("checkoutId");
+    const checkoutId = checkoutIdFromQuery || localStorage.getItem("pendingCheckoutId");
 
-      if (pendingCheckoutId) {
-        dispatch(fetchCheckoutById(pendingCheckoutId));
+    if (!checkoutId) {
+      navigate("/my-orders");
+      return;
+    }
+
+    const processConfirmation = async () => {
+      try {
+        if (reference) {
+          await axios.post(
+            `${import.meta.env.VITE_BACKEND_URL}/api/payment/verifyPayment`,
+            { reference, checkoutId },
+          );
+        }
+
+        await dispatch(fetchCheckoutById(checkoutId));
         dispatch(clearCart());
         localStorage.removeItem("cart");
-        localStorage.removeItem("pendingCheckoutId"); // 👈 clean up
-      } else {
-        navigate("/my-orders");
+        localStorage.removeItem("pendingCheckoutId");
+      } catch (error) {
+        console.error("Order confirmation processing failed:", error);
       }
-    }, [dispatch, navigate]);
+    };
+
+    processConfirmation();
+  }, [dispatch, location.search, navigate]);
 
   const calculateEstimatedDelivery = (createdAt) => {
     const orederDate = new Date(createdAt);
     orederDate.setDate(orederDate.getDate() + 10);
     return orederDate.toLocaleDateString();
   };
-
 
   if (loading) return <p>Loading your order...</p>;
   if (!checkout) return null;
@@ -49,23 +61,17 @@ const OrderConfirmationPage = () => {
         <div className="p-6 rounded-lg border">
           <div className="flex justify-between mb-20">
             <div className="">
-              <h2 className="text-xl font-semibold">
-                {" "}
-                Order ID:{checkout._id}
-              </h2>
+              <h2 className="text-xl font-semibold"> Order ID:{checkout._id}</h2>
               <p className="text-gray-500 ">
                 Order date: {new Date(checkout.createdAt).toLocaleDateString()}
               </p>
             </div>
-            {/* Estimated Delivery */}
             <div>
               <p className="text-emerald-700 text-sm">
-                Estimated Delivery:{" "}
-                {calculateEstimatedDelivery(checkout.createdAt)}
+                Estimated Delivery: {calculateEstimatedDelivery(checkout.createdAt)}
               </p>
             </div>
           </div>
-          {/* Oredered Items */}
 
           <div className="mb-20 ">
             {checkout.checkoutItems.map((item) => (
@@ -83,29 +89,23 @@ const OrderConfirmationPage = () => {
                 </div>
                 <div className="ml-auto text-right">
                   <p className="font ">${item.price}</p>
-                  <div className="text-sm text-gray-500">
-                    Qty: {item.quantity}
-                  </div>
+                  <div className="text-sm text-gray-500">Qty: {item.quantity}</div>
                 </div>
               </div>
             ))}
           </div>
-          {/* Payment & delivery */}
+
           <div className="grid grid-cols-2 gap-8">
             <div className="">
               <h4 className="text-lg font-semibold mb-2">Payment</h4>
-              <p className="text-gray-600">Paypal</p>
+              <p className="text-gray-600">Paystack</p>
             </div>
 
-            {/* Delivery */}
             <div className="">
               <h4 className="text-lg font-semibold mb-2">Delivery</h4>
+              <p className="text-gray-600">{checkout.shippingAddress.address}</p>
               <p className="text-gray-600">
-                {checkout.shippingAddress.address}
-              </p>
-              <p className="text-gray-600">
-                {checkout.shippingAddress.city},{" "}
-                {checkout.shippingAddress.country}
+                {checkout.shippingAddress.city}, {checkout.shippingAddress.country}
               </p>
             </div>
           </div>

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 //import PaypalButton from "./PaypalButton";
 import { useDispatch, useSelector } from "react-redux";
 import { createCheckout } from "../../redux/slices/checkoutSlice";
-// import axios from "axios";
 // import PaystackPop from "@paystack/inline-js";
 import { initializePayment } from "../../redux/slices/paystackSlice";
 
@@ -38,6 +37,7 @@ const Checkout = () => {
   const { paymentUrl } = useSelector((state) => state.payment);
 
   const [checkoutId, setCheckoutId] = useState(null);
+  const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
   // const [checkoutItems, setCheckoutItems] = useState(null);
   const [shippingAddress, setShippingAddress] = useState({
     firstName: "",
@@ -58,17 +58,28 @@ const Checkout = () => {
 
   const handleCreateCheckout = async (e) => {
     e.preventDefault();
+
+    if (isCreatingCheckout || checkoutId) {
+      return;
+    }
+
     if (cart && cart.products.length > 0) {
-      const res = await dispatch(
-        createCheckout({
-          checkoutItems: cart.products,
-          shippingAddress,
-          paymentMethod: "Paystack",
-          totalPrice: cart.totalPrice,
-        }),
-      );
-      if (res.payload && res.payload._id) {
-        setCheckoutId(res.payload._id);
+      setIsCreatingCheckout(true);
+      try {
+        const res = await dispatch(
+          createCheckout({
+            checkoutItems: cart.products,
+            shippingAddress,
+            paymentMethod: "Paystack",
+            totalPrice: cart.totalPrice,
+          }),
+        );
+
+        if (res.payload && res.payload._id) {
+          setCheckoutId(res.payload._id);
+        }
+      } finally {
+        setIsCreatingCheckout(false);
       }
     }
   };
@@ -78,40 +89,17 @@ const Checkout = () => {
       localStorage.setItem("pendingCheckoutId", checkoutId);
      dispatch(initializePayment(checkoutId));
     }
-  }, [checkoutId, dispatch,paymentUrl]);
+  }, [checkoutId, dispatch]);
   
   useEffect(() => {
     if (paymentUrl) {
-      location.href = paymentUrl;
+      window.location.href = paymentUrl;
     }
-  }, [checkoutId, dispatch, paymentUrl]);
+  }, [paymentUrl]);
 
 
-  // const handleFinalizeCheckout = async (checkoutId) => {
-  //   try {
-  //     const token = localStorage.getItem("userToken");
 
-  //     if (!token) {
-  //       console.error("No token found!");
-  //       navigate("/login?redirect=checkout");
-  //       return;
-  //     }
 
-  //     await axios.post(
-  //       `${import.meta.env.VITE_BACKEND_URL}/api/checkout/${checkoutId}/finalize`,
-  //       {},
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${localStorage.getItem("userToken")}`,
-  //         },
-  //       },
-  //     );
-
-  //     navigate("/order-confirmation");
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
 
   // const handlePaymentSuccess = async (details) => {
   //   try {
@@ -274,9 +262,10 @@ const Checkout = () => {
             {!checkoutId && (
               <button
                 type="submit"
-                className="w-full bg-black text-white py-3 rounded"
+                disabled={isCreatingCheckout || !!checkoutId}
+                className="w-full bg-black text-white py-3 rounded disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                Continue Payment
+                {isCreatingCheckout ? "Creating checkout..." : "Continue Payment"}
               </button>
             )}
             {/*  ) : (
